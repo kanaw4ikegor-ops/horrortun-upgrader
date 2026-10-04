@@ -5,11 +5,73 @@
     <title>Minecraft Cases - Апгрейдер</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .upgrader-box { background: #1c1f26; border: 2px solid #2d323f; border-radius: 10px; padding: 40px; text-align: center; max-width: 500px; margin: 40px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-        .upgrade-status { margin: 25px 0; font-size: 18px; color: #ffaa00; font-weight: bold; }
-        .btn-upgrade { background-color: #8c1111; border: none; border-bottom: 4px solid #5a0a0a; color: white; padding: 14px; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 6px; width: 100%; transition: all 0.1s ease; }
+        .upgrader-box { 
+            background: #1c1f26; 
+            border: 2px solid #2d323f; 
+            border-radius: 10px; 
+            padding: 25px; /* Уменьшил отступы */
+            text-align: center; 
+            max-width: 420px; /* Уменьшил ширину карточки */
+            margin: 30px auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4); 
+        }
+        .upgrade-status { margin: 15px 0 10px 0; font-size: 16px; color: #ffaa00; font-weight: bold; min-height: 48px; }
+        .btn-upgrade { background-color: #8c1111; border: none; border-bottom: 4px solid #5a0a0a; color: white; padding: 12px; font-weight: bold; cursor: pointer; font-size: 15px; border-radius: 6px; width: 100%; transition: all 0.1s ease; }
         .btn-upgrade:hover { background-color: #a81515; }
         .btn-upgrade:active { border-bottom-width: 1px; transform: translateY(3px); }
+        .btn-upgrade:disabled { background-color: #2d323f; border-bottom-color: #1c1f26; color: #64748b; cursor: not-allowed; }
+        
+        /* УМЕНЬШЕННАЯ КРУГЛАЯ РУЛЕТКА (РАДАР) */
+        .csgo-radar-container {
+            width: 100px; /* Было 150px, уменьшил до 100px */
+            height: 100px; /* Было 150px, уменьшил до 100px */
+            margin: 15px auto;
+            position: relative;
+            border-radius: 50%;
+            background: #0f1115;
+            border: 3px solid #2d323f;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
+        }
+        .radar-sector {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(#4a7227 0deg, #4a7227 72deg, #8c1111 72deg, #8c1111 360deg);
+            transition: transform 3s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+        .radar-center-pin {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ffaa00;
+            border-radius: 50%;
+            z-index: 12;
+            box-shadow: 0 0 6px #ffaa00;
+        }
+        .radar-arrow {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            width: 3px;
+            height: 18px; /* Немного укоротил стрелочку */
+            background: #ffaa00;
+            z-index: 15;
+            transform: translateX(-50%);
+            box-shadow: 0 0 4px #ffaa00;
+        }
+        .radar-preview-img {
+            position: absolute;
+            width: 36px; /* Было 50px, уменьшил до 36px */
+            height: 36px;
+            object-fit: contain;
+            z-index: 10;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
@@ -19,26 +81,41 @@
         <div class="balance" id="balance-display">Баланс: -- 💰</div>
     </header>
 
-    <nav>
-        <a href="cases.html"><button>КЕЙСЫ</button></a>
-        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
-        <a href="upgrader.html"><button class="active-nav">АПГРЕЙДЕР</button></a>
+    <nav id="main-nav">
+        <a href="cases.html"><button id="nav-cases">КЕЙСЫ</button></a>
+        <a href="farm.html"><button id="nav-farm">🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button id="nav-upgrader" class="active-nav">АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button id="nav-vivod">💸 ВЫВОД</button></a>
         <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
     </nav>
 
     <div class="upgrader-box">
-        <h2 style="color: #e2e8f0;">🔮 СТОЛ ЗАЧАРОВАНИЯ</h2>
-        <div class="upgrade-status" id="upgrade-status">Для апгрейда автоматически берется первый предмет из инвентаря</div>
-        <button class="btn-upgrade" onclick="runUpgrade()">ЗАЧАРОВАТЬ (Шанс 50%)</button>
+        <h2 style="color: #e2e8f0; font-size: 20px;">🔮 СТОЛ ЗАЧАРОВАНИЯ</h2>
+        
+        <!-- Уменьшенная рулетка-радар -->
+        <div class="csgo-radar-container">
+            <div class="radar-arrow"></div>
+            <div class="radar-center-pin"></div>
+            <div class="radar-sector" id="radar-wheel"></div>
+            <img src="images2.jpg" class="radar-preview-img" id="radar-preview">
+        </div>
+
+        <div class="upgrade-status" id="upgrade-status">Положите еду в инвентарь, чтобы начать зачарование</div>
+        <button class="btn-upgrade" id="upgrade-btn" onclick="runUpgrade()">ЗАЧАРОВАТЬ ПРЕДМЕТ</button>
     </div>
 
     <script>
-        // Синхронизированные новые цены
         const FOOD_ITEMS = {
-            "1": { name: "Золотая морковь", price: 7, color: "#55ffff" },
-            "2": { name: "Стейк", price: 2, color: "#8b5a2b" },
-            "3": { name: "Золотое яблоко", price: 15, color: "#ffaa00" },
-            "4": { name: "Жареная курица", price: 4, color: "#cd853f" }
+            "1": { name: "Золотая морковь", price: 7, color: "#55ffff", url: "images1.jpg" },
+            "2": { name: "Стейк", price: 2, color: "#8b5a2b", url: "images2.jpg" },
+            "3": { name: "Золотое яблоко", price: 15, color: "#ffaa00", url: "images3.jpg" },
+            "4": { name: "Жареная курица", price: 4, color: "#cd853f", url: "images4.png" }
+        };
+
+        const UPGRADE_CHAIN = {
+            "2": { next: "4", chance: 20 }, 
+            "4": { next: "1", chance: 20 }, 
+            "1": { next: "3", chance: 10 }  
         };
 
         const currentUser = localStorage.getItem('mc_current_user');
@@ -58,40 +135,102 @@
         }
 
         function updateUI() {
-            document.getElementById('balance-display').innerText = `Баланс: ${parseFloat(userData.balance).toFixed(1)} 💰`;
+            let displayBalance = parseFloat(userData.balance).toFixed(1);
+            if (displayBalance === "-0.0" || displayBalance === "0.0") displayBalance = "0";
+            document.getElementById('balance-display').innerText = `Баланс: ${displayBalance} 💰`;
+
+            const status = document.getElementById('upgrade-status');
+            const preview = document.getElementById('radar-preview');
+            const btn = document.getElementById('upgrade-btn');
+            const wheel = document.getElementById('radar-wheel');
+
+            if (!userData.inventory || userData.inventory.length === 0) {
+                status.innerText = "Ваш инвентарь пуст! Нечего апгрейдить.";
+                preview.src = "images2.jpg";
+                wheel.style.background = `conic-gradient(#2d323f 0deg, #2d323f 360deg)`;
+                btn.disabled = true;
+                return;
+            }
+
+            const currentItemKey = userData.inventory[0];
+            const item = FOOD_ITEMS[currentItemKey];
+            preview.src = item.url;
+
+            if (UPGRADE_CHAIN[currentItemKey]) {
+                const config = UPGRADE_CHAIN[currentItemKey];
+                const nextItem = FOOD_ITEMS[config.next];
+                const deg = Math.round(config.chance * 3.6);
+
+                status.innerHTML = `В инвентаре: <b style="color:${item.color}">${item.name}</b><br>Шанс улучшить до <b style="color:${nextItem.color}">${nextItem.name}</b>: ${config.chance}%`;
+                wheel.style.background = `conic-gradient(#4a7227 0deg, #4a7227 ${deg}deg, #8c1111 ${deg}deg, #8c1111 360deg)`;
+                btn.disabled = false;
+            } else {
+                status.innerHTML = `В инвентаре: <b style="color:${item.color}">${item.name}</b><br><span style="color:#64748b">Это максимальный уровень!</span>`;
+                wheel.style.background = `conic-gradient(#2d323f 0deg, #2d323f 360deg)`;
+                btn.disabled = true;
+            }
         }
 
         function runUpgrade() {
             const status = document.getElementById('upgrade-status');
-            if(!userData.inventory || userData.inventory.length === 0) {
-                status.innerText = "Ваш инвентарь пуст!";
-                return;
-            }
+            const btn = document.getElementById('upgrade-btn');
+            const wheel = document.getElementById('radar-wheel');
 
-            const itemKey = userData.inventory.shift();
-            const success = Math.random() < 0.5;
+            const itemKey = userData.inventory[0];
+            const config = UPGRADE_CHAIN[itemKey];
 
-            if(success) {
-                // Успешный апгрейд превращает любую еду в Золотое Яблоко (3) за 15 монет
-                const nextKey = '3'; 
-                userData.inventory.push(nextKey);
-                status.innerHTML = `🔥 Успех! Предмет улучшен до: <b style="color:${FOOD_ITEMS[nextKey].color}">${FOOD_ITEMS[nextKey].name}</b>`;
+            btn.disabled = true;
+            status.innerText = "🔮 Магические чары накладываются...";
+
+            const randResult = Math.random() * 100;
+            const success = randResult <= config.chance;
+
+            let finalAngle = 0;
+            if (success) {
+                const maxWinDeg = config.chance * 3.6;
+                finalAngle = Math.random() * maxWinDeg;
             } else {
-                status.innerHTML = `<span style="color:#ff3333">💨 Осечка! Ваша еда сгорела в лаве.</span>`;
+                const minLoseDeg = config.chance * 3.6;
+                finalAngle = minLoseDeg + Math.random() * (360 - minLoseDeg);
             }
-            updateUI();
-            saveLayout();
+
+            let spinDegrees = 1800 - finalAngle;
+
+            wheel.style.transition = 'transform 3s cubic-bezier(0.1, 0.8, 0.1, 1)';
+            wheel.style.transform = `rotate(${spinDegrees}deg)`;
+
+            userData.inventory.shift();
+
+            setTimeout(() => {
+                wheel.style.transition = 'none';
+                wheel.style.transform = `rotate(${-finalAngle}deg)`;
+
+                if (success) {
+                    const nextKey = config.next;
+                    userData.inventory.unshift(nextKey);
+                    status.innerHTML = `🔥 УСПЕХ! Получен предмет: <b style="color:${FOOD_ITEMS[nextKey].color}">${FOOD_ITEMS[nextKey].name}</b>!`;
+                } else {
+                    status.innerHTML = `<span style="color:#ff3333">💨 ОСЕЧКА! Предмет сгорел.</span>`;
+                }
+
+                saveLayout();
+                updateUI();
+            }, 3100);
         }
+
+        (function() {
+            const user = localStorage.getItem('mc_current_user');
+            if (user === 'imCOT51') {
+                const nav = document.getElementById('main-nav');
+                const logoutBtn = nav.querySelector('button[onclick="logout()"]');
+                
+                const adminLink = document.createElement('a');
+                adminLink.href = 'zayavka.html';
+                adminLink.innerHTML = '<button id="nav-admin" style="background-color: #2e3440; border-color: #ffaa00; color: #ffaa00; font-weight:bold; cursor:pointer; padding:12px 24px; border-radius:6px;">⚙️ ЗАЯВКИ</button>';
+                
+                nav.insertBefore(adminLink, logoutBtn);
+            }
+        })();
 
         updateUI();
     </script>
-</body>
-</html>
-    <nav>
-        <a href="cases.html"><button>КЕЙСЫ</button></a>
-        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
-        <a href="upgrader.html"><button>АПГРЕЙДЕР</button></a>
-        <a href="vivod.html"><button>💸 ВЫВОД</button></a>
-        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
-    </nav>
-
