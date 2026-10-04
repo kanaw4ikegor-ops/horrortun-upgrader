@@ -1,0 +1,320 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background-color: #111215;
+    color: #e2e8f0;
+    padding: 30px;
+}
+
+/* ШАПКА */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1f232b;
+}
+
+.logo {
+    color: #ffaa00;
+    font-size: 26px;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.balance {
+    color: #ffcc00;
+    font-size: 22px;
+    font-weight: bold;
+    background: #1c1f26;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #2d323f;
+}
+
+/* НАВИГАЦИЯ */
+nav {
+    margin: 25px 0;
+    display: flex;
+    gap: 12px;
+}
+
+nav button, nav a button {
+    background-color: #1c1f26;
+    border: 1px solid #2d323f;
+    color: #94a3b8;
+    padding: 12px 24px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+nav a {
+    text-decoration: none;
+}
+
+nav button:hover, nav a button:hover {
+    background-color: #252a34;
+    color: #fff;
+    border-color: #475569;
+}
+
+.active-nav {
+    background-color: #242b35 !important;
+    border-color: #ffaa00 !important;
+    color: #ffaa00 !important;
+}
+
+/* КАРТОЧКА ПРЕДМЕТА */
+.item-card {
+    width: 110px;
+    height: 120px;
+    background: #1c1f26;
+    border: 2px solid #2d323f;
+    margin-right: 10px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.item-card img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    margin-bottom: 8px;
+    image-rendering: pixelated;
+}
+
+.item-card b {
+    color: #f1f5f9;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* ИНВЕНТАРЬ */
+.inventory-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+    min-height: 160px;
+    background: #0f1115;
+    padding: 25px;
+    border-radius: 10px;
+    border: 2px solid #1c1f26;
+}
+
+.inventory-grid .item-card {
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.inventory-grid .item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+}
+
+/* ФЕРМА / КЛИКЕР */
+.farm-box {
+    background: #1c1f26;
+    border: 2px solid #2d323f;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    margin: 20px auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    position: relative;
+}
+
+.click-area-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 20px auto;
+}
+
+.click-target {
+    width: 180px;
+    height: 180px;
+    cursor: pointer;
+    transition: transform 0.05s ease;
+    display: block;
+    image-rendering: pixelated;
+}
+
+.click-target:active {
+    transform: scale(0.95);
+}
+
+.energy-bar-container {
+    width: 100%;
+    background: #0f1115;
+    border-radius: 6px;
+    height: 20px;
+    margin-top: 15px;
+    overflow: hidden;
+    border: 1px solid #2d323f;
+}
+
+.energy-bar {
+    height: 100%;
+    background: #00ffaa;
+    width: 100%;
+    transition: width 0.1s linear;
+}
+
+/* ЛИТАЮЩИЙ ТЕКСТ +0.1 */
+.floating-text {
+    position: absolute;
+    color: #ffcc00;
+    font-weight: bold;
+    font-size: 20px;
+    pointer-events: none;
+    animation: floatUp 0.8s ease-out forwards;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 100;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
+}
+
+/* СТИЛИ СТРАНИЦЫ ВЫВОДА ПРЕДМЕТОВ */
+.payout-container {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+.inventory-section {
+    flex: 1;
+    background: #1c1f26;
+    border: 2px solid #2d323f;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+.inventory-section h3 { color: #ffaa00; margin-bottom: 15px; border-bottom: 1px solid #2d323f; padding-bottom: 10px; }
+
+.payout-inventory-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 150px;
+}
+
+.payout-inventory-grid .item-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payout-inventory-grid .item-card:hover {
+    transform: translateY(-4px);
+    border-color: #ffaa00 !important;
+    box-shadow: 0 4px 12px rgba(255, 170, 0, 0.2);
+}
+
+.payout-inventory-grid .item-card.selected-item {
+    border-color: #ffaa00 !important;
+    background: #242b35;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+}
+
+.right-section {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-box, .history-box {
+    background: #1c1f26;
+    border: 2px solid #2d323f;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+.form-box h2, .history-box h3 { color: #ffaa00; margin-bottom: 15px; text-align: center; }
+
+.selected-preview {
+    background: #0f1115;
+    border: 1px dashed #2d323f;
+    padding: 15px;
+    text-align: center;
+    border-radius: 6px;
+    color: #64748b;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.form-box input {
+    width: 100%;
+    padding: 12px;
+    background: #0f1115;
+    border: 1px solid #2d323f;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-box input:focus { border-color: #475569; outline: none; }
+
+.btn-payout {
+    background-color: #4a7227;
+    border: none;
+    border-bottom: 4px solid #2b4516;
+    color: white;
+    width: 100%;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-top: 15px;
+    transition: all 0.1s ease;
+}
+
+.btn-payout:hover { background-color: #55822e; }
+.btn-payout:active { border-bottom-width: 1px; transform: translateY(3px); }
+
+.history-box { max-height: 300px; overflow-y: auto; }
+
+.payout-item {
+    background: #0f1115;
+    border: 1px solid #2d323f;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.status-processing { color: #ffcc00; font-weight: bold; }

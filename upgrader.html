@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Апгрейдер</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .upgrader-box { background: #1c1f26; border: 2px solid #2d323f; border-radius: 10px; padding: 40px; text-align: center; max-width: 500px; margin: 40px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .upgrade-status { margin: 25px 0; font-size: 18px; color: #ffaa00; font-weight: bold; }
+        .btn-upgrade { background-color: #8c1111; border: none; border-bottom: 4px solid #5a0a0a; color: white; padding: 14px; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 6px; width: 100%; transition: all 0.1s ease; }
+        .btn-upgrade:hover { background-color: #a81515; }
+        .btn-upgrade:active { border-bottom-width: 1px; transform: translateY(3px); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">📦 MC-FOOD-CASES</div>
+        <div class="balance" id="balance-display">Баланс: -- 💰</div>
+    </header>
+
+    <nav>
+        <a href="cases.html"><button>КЕЙСЫ</button></a>
+        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button class="active-nav">АПГРЕЙДЕР</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <div class="upgrader-box">
+        <h2 style="color: #e2e8f0;">🔮 СТОЛ ЗАЧАРОВАНИЯ</h2>
+        <div class="upgrade-status" id="upgrade-status">Для апгрейда автоматически берется первый предмет из инвентаря</div>
+        <button class="btn-upgrade" onclick="runUpgrade()">ЗАЧАРОВАТЬ (Шанс 50%)</button>
+    </div>
+
+    <script>
+        // Синхронизированные новые цены
+        const FOOD_ITEMS = {
+            "1": { name: "Золотая морковь", price: 7, color: "#55ffff" },
+            "2": { name: "Стейк", price: 2, color: "#8b5a2b" },
+            "3": { name: "Золотое яблоко", price: 15, color: "#ffaa00" },
+            "4": { name: "Жареная курица", price: 4, color: "#cd853f" }
+        };
+
+        const currentUser = localStorage.getItem('mc_current_user');
+        if (!currentUser) window.location.href = 'index.html';
+
+        let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+        let userData = users[currentUser];
+
+        function saveLayout() {
+            users[currentUser] = userData;
+            localStorage.setItem('mc_users', JSON.stringify(users));
+        }
+
+        function logout() {
+            localStorage.removeItem('mc_current_user');
+            window.location.href = 'index.html';
+        }
+
+        function updateUI() {
+            document.getElementById('balance-display').innerText = `Баланс: ${parseFloat(userData.balance).toFixed(1)} 💰`;
+        }
+
+        function runUpgrade() {
+            const status = document.getElementById('upgrade-status');
+            if(!userData.inventory || userData.inventory.length === 0) {
+                status.innerText = "Ваш инвентарь пуст!";
+                return;
+            }
+
+            const itemKey = userData.inventory.shift();
+            const success = Math.random() < 0.5;
+
+            if(success) {
+                // Успешный апгрейд превращает любую еду в Золотое Яблоко (3) за 15 монет
+                const nextKey = '3'; 
+                userData.inventory.push(nextKey);
+                status.innerHTML = `🔥 Успех! Предмет улучшен до: <b style="color:${FOOD_ITEMS[nextKey].color}">${FOOD_ITEMS[nextKey].name}</b>`;
+            } else {
+                status.innerHTML = `<span style="color:#ff3333">💨 Осечка! Ваша еда сгорела в лаве.</span>`;
+            }
+            updateUI();
+            saveLayout();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
+    <nav>
+        <a href="cases.html"><button>КЕЙСЫ</button></a>
+        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button>АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button>💸 ВЫВОД</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+

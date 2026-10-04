@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Кейсы</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .roulette-container-box {
+            max-width: 600px;
+            margin: 30px auto 15px auto;
+        }
+        .roulette-wrapper { 
+            width: 100%; 
+            position: relative; 
+            overflow: hidden; 
+            height: 140px; 
+            background: #0f1115; 
+            border: 2px solid #2d323f; 
+            border-radius: 10px;
+        }
+        .roulette-line { position: absolute; left: 50%; top: 0; width: 4px; height: 100%; background: #ffaa00; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #ffaa00; }
+        .roulette-ribbon { display: flex; position: absolute; left: 0; top: 10px; transition: transform 3s cubic-bezier(0.1, 0.8, 0.1, 1); }
+        
+        .btn-open-container {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .btn-open { 
+            background-color: #4a7227 !important; 
+            border: none !important;
+            border-bottom: 4px solid #2b4516 !important;
+            color: #ffffff !important; 
+            padding: 14px 40px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            cursor: pointer;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(74, 114, 39, 0.3);
+            transition: all 0.1s ease;
+        }
+        .btn-open:hover { background-color: #55822e !important; color: #ffffff !important; }
+        .btn-open:active { border-bottom-width: 1px !important; transform: translateY(3px); }
+        .btn-open:disabled { background-color: #2d323f !important; border-bottom-color: #1c1f26 !important; color: #718096 !important; cursor: not-allowed; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">📦 MC-FOOD-CASES</div>
+        <div class="balance" id="balance-display">Баланс: -- 💰</div>
+    </header>
+
+    <nav>
+        <a href="cases.html"><button class="active-nav">КЕЙСЫ</button></a>
+        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button>АПГРЕЙДЕР</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <h3 style="text-align: center; color: #ffaa00; font-size: 20px;">Сундук Удачи (Цена: 5 💰)</h3>
+    
+    <div class="roulette-container-box">
+        <div class="roulette-wrapper">
+            <div class="roulette-line"></div>
+            <div class="roulette-ribbon" id="ribbon"></div>
+        </div>
+    </div>
+
+    <div class="btn-open-container">
+        <button class="btn-open" id="open-btn" onclick="spinCase()">ОТКРЫТЬ СУНДУК</button>
+    </div>
+
+    <h4 style="font-size: 18px; color: #94a3b8; border-bottom: 1px solid #1c1f26; padding-bottom: 10px;">Ваш Инвентарь (Кликни для продажи):</h4>
+    <div class="inventory-grid" id="inventory"></div>
+
+    <script>
+        const FOOD_ITEMS = {
+            "1": { name: "Золотая морковь", price: 7, color: "#55ffff", url: "images1.jpg" },
+            "2": { name: "Стейк", price: 2, color: "#8b5a2b", url: "images2.jpg" },
+            "3": { name: "Золотое яблоко", price: 15, color: "#ffaa00", url: "images3.jpg" },
+            "4": { name: "Жареная курица", price: 4, color: "#cd853f", url: "images4.png" }
+        };
+
+        const currentUser = localStorage.getItem('mc_current_user');
+        if (!currentUser) window.location.href = 'index.html';
+
+        let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+        let userData = users[currentUser];
+
+        // ЖЕСТКИЙ СБРОС НА 0 (убрали тестовые деньги для всех новых и текущих сессий)
+        if (!userData.hard_zero_balance_fixed) {
+            userData.balance = 0; 
+            userData.inventory = [];
+            userData.hard_zero_balance_fixed = true;
+            saveLayout();
+        }
+
+        if (userData.balance < 0) {
+            userData.balance = 0;
+            saveLayout();
+        }
+
+        function saveLayout() {
+            users[currentUser] = userData;
+            localStorage.setItem('mc_users', JSON.stringify(users));
+        }
+
+        function logout() {
+            localStorage.removeItem('mc_current_user');
+            window.location.href = 'index.html';
+        }
+
+        function updateUI() {
+            let displayBalance = parseFloat(userData.balance).toFixed(1);
+            if (displayBalance === "-0.0" || displayBalance === "0.0") displayBalance = "0";
+            document.getElementById('balance-display').innerText = `Баланс: ${displayBalance} 💰`;
+            
+            const invGrid = document.getElementById('inventory');
+            invGrid.innerHTML = '';
+            
+            userData.inventory.forEach((itemKey, index) => {
+                const item = FOOD_ITEMS[itemKey];
+                if(!item) return;
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.style.borderColor = item.color;
+                card.innerHTML = `<img src="${item.url}"><b>${item.name}</b><span style="color:#ffcc00; font-weight:bold;">${item.price} 💰</span>`;
+                card.onclick = () => sellItem(index);
+                invGrid.appendChild(card);
+            });
+        }
+
+        function buildRibbonPlaceholder() {
+            const ribbon = document.getElementById('ribbon');
+            ribbon.style.transition = 'none';
+            ribbon.style.transform = 'translateX(0px)';
+            ribbon.innerHTML = '';
+            const keys = Object.keys(FOOD_ITEMS);
+            for(let i=0; i<35; i++) {
+                const randKey = keys[Math.floor(Math.random() * keys.length)];
+                const item = FOOD_ITEMS[randKey];
+                ribbon.innerHTML += `<div class="item-card" style="border-color:${item.color}"><img src="${item.url}"><b>${item.name}</b></div>`;
+            }
+        }
+
+        function spinCase() {
+            let balanceInCents = Math.round(userData.balance * 10);
+            
+            if (balanceInCents < 50) { 
+                return alert("Не хватает монет! Зарабатывай на ферме стейков.");
+            }
+            
+            userData.balance = (balanceInCents - 50) / 10;
+            updateUI();
+            saveLayout();
+
+            const btn = document.getElementById('open-btn');
+            btn.disabled = true;
+
+            const rand = Math.random() * 100;
+            let winnerKey = '2'; 
+            if (rand <= 0.5) winnerKey = '3';
+            else if (rand > 0.5 && rand <= 10.5) winnerKey = '1';
+            else if (rand > 10.5 && rand <= 35.5) winnerKey = '4';
+            else winnerKey = '2';
+
+            const ribbon = document.getElementById('ribbon');
+            buildRibbonPlaceholder();
+            
+            const cards = ribbon.querySelectorAll('.item-card');
+            const targetCard = cards[23]; 
+            const item = FOOD_ITEMS[winnerKey];
+            targetCard.style.borderColor = item.color;
+            targetCard.innerHTML = `<img src="${item.url}"><b>${item.name}</b>`;
+
+            setTimeout(() => {
+                ribbon.style.transition = 'transform 3s cubic-bezier(0.1, 0.8, 0.1, 1)';
+                const cardWidth = 120; 
+                const finalShift = -(23 * cardWidth) + (300 - cardWidth/2);
+                ribbon.style.transform = `translateX(${finalShift}px)`;
+            }, 50);
+
+            setTimeout(() => {
+                userData.inventory.push(winnerKey);
+                updateUI();
+                saveLayout();
+                btn.disabled = false;
+            }, 3100);
+        }
+
+        function sellItem(index) {
+            const itemKey = userData.inventory[index];
+            let balanceInCents = Math.round(userData.balance * 10);
+            let itemPriceInCents = Math.round(FOOD_ITEMS[itemKey].price * 10);
+            
+            userData.balance = (balanceInCents + itemPriceInCents) / 10;
+            userData.inventory.splice(index, 1);
+            updateUI();
+            saveLayout();
+        }
+
+        updateUI();
+        buildRibbonPlaceholder();
+    </script>
+</body>
+</html>
+     <nav id="main-nav">
+        <a href="cases.html"><button id="nav-cases">КЕЙСЫ</button></a>
+        <a href="farm.html"><button id="nav-farm">🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button id="nav-upgrader">АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button id="nav-vivod">💸 ВЫВОД</button></a>
+        <!-- Кнопка админа вставится сюда автоматически через скрипт ниже -->
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <script>
+        // Этот маленький скрипт проверяет админа и добавляет кнопку. Поставь его прямо под блоком <nav> во всех файлах
+        (function() {
+            const user = localStorage.getItem('mc_current_user');
+            if (user === 'imCOT51') {
+                const nav = document.getElementById('main-nav');
+                const logoutBtn = nav.querySelector('button[onclick="logout()"]');
+                
+                const adminLink = document.createElement('a');
+                adminLink.href = 'zayavka.html';
+                adminLink.innerHTML = '<button id="nav-admin" style="background-color: #2e3440; border-color: #ffaa00; color: #ffaa00;">⚙️ ЗАЯВКИ</button>';
+                
+                nav.insertBefore(adminLink, logoutBtn);
+            }
+            
+            // Автоматическая подсветка активной вкладки
+            const pageName = window.location.pathname.split('/').pop().replace('.html', '');
+            const activeBtn = document.getElementById(`nav-${pageName}`);
+            if (activeBtn) activeBtn.classList.add('active-nav');
+        })();
+    </script>
+

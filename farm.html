@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Ферма</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">📦 MC-FOOD-CASES</div>
+        <div class="balance" id="balance-display">Баланс: -- 💰</div>
+    </header>
+
+    <nav>
+        <a href="cases.html"><button>КЕЙСЫ</button></a>
+        <a href="farm.html"><button class="active-nav">🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button>АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button>💸 ВЫВОД</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <div class="farm-box" id="farm-zone">
+        <h2>ФЕРМА СТЕЙКОВ</h2>
+        <p style="color: #94a3b8; margin-top: 5px;">Кликай по стейку, чтобы заработать золото!</p>
+        
+        <div class="click-area-wrapper">
+            <img src="images2.jpg" class="click-target" id="steak-clicker" onclick="hitSteak(event)">
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <span id="energy-text">Энергия: 100/100</span>
+            <span style="color: #ffcc00; font-weight: bold;">1 клик = +0.1 💰</span>
+        </div>
+        
+        <div class="energy-bar-container">
+            <div class="energy-bar" id="energy-fill"></div>
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin-top: 10px;">Регенерация: +1 энергия каждые 20 секунд</p>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('mc_current_user');
+        if (!currentUser) window.location.href = 'index.html';
+
+        let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+        let userData = users[currentUser];
+
+        let maxEnergy = 100;
+        let energyKey = `mc_farm_energy_${currentUser}`;
+        let currentEnergy = parseInt(localStorage.getItem(energyKey) || '100');
+
+        function saveLayout() {
+            users[currentUser] = userData;
+            localStorage.setItem('mc_users', JSON.stringify(users));
+        }
+
+        function logout() {
+            localStorage.removeItem('mc_current_user');
+            window.location.href = 'index.html';
+        }
+
+        function updateUI() {
+            let displayBalance = parseFloat(userData.balance).toFixed(1);
+            if (displayBalance === "-0.0" || displayBalance === "0.0") displayBalance = "0";
+            document.getElementById('balance-display').innerText = `Баланс: ${displayBalance} 💰`;
+            
+            document.getElementById('energy-text').innerText = `Энергия: ${currentEnergy}/${maxEnergy}`;
+            document.getElementById('energy-fill').style.width = `${(currentEnergy / maxEnergy) * 100}%`;
+        }
+
+        function hitSteak(event) {
+            if (currentEnergy < 1) {
+                alert("Энергия на нуле! Восстановление +1 энергия каждые 20 секунд.");
+                return;
+            }
+            
+            currentEnergy -= 1;
+            
+            let balanceInCents = Math.round(userData.balance * 10);
+            userData.balance = (balanceInCents + 1) / 10; 
+            
+            localStorage.setItem(energyKey, currentEnergy);
+            
+            // СТВОРЕННЯ ЛІТАЮЧОГО ТЕКСТУ +0.1 ОКОЛО КУРСОРУ МИШКИ
+            createFloatingText(event);
+            
+            updateUI();
+            saveLayout();
+        }
+
+        function createFloatingText(event) {
+            const farmZone = document.getElementById('farm-zone');
+            const textElement = document.createElement('div');
+            textElement.className = 'floating-text';
+            textElement.innerText = '+0.1';
+            
+            // Розрахунок координат кліку всередині картки ферми
+            const rect = farmZone.getBoundingClientRect();
+            const x = event.clientX - rect.left - 20;
+            const y = event.clientY - rect.top - 20;
+            
+            textElement.style.left = `${x}px`;
+            textElement.style.top = `${y}px`;
+            
+            farmZone.appendChild(textElement);
+            
+            // Видаляємо елемент після завершення анімації
+            setTimeout(() => {
+                textElement.remove();
+            }, 800);
+        }
+
+        setInterval(() => {
+            if (currentEnergy < maxEnergy) {
+                currentEnergy = Math.min(maxEnergy, currentEnergy + 1);
+                localStorage.setItem(energyKey, currentEnergy);
+                updateUI();
+            }
+        }, 20000);
+
+        updateUI();
+    </script>
+</body>
+</html>

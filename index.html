@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Авторизация</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container { 
+            max-width: 400px; 
+            margin: 100px auto; 
+            background: #1c1f26; 
+            padding: 35px; 
+            border: 2px solid #2d323f; 
+            text-align: center; 
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #2d323f;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            color: #94a3b8;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .auth-tab.active-tab {
+            color: #ffaa00;
+            border-bottom: 2px solid #ffaa00;
+        }
+        .auth-container input { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 15px; 
+            background: #0f1115; 
+            border: 2px solid #2d323f; 
+            color: #fff; 
+            border-radius: 6px; 
+            font-size: 14px;
+        }
+        .auth-container input:focus {
+            border-color: #475569;
+            outline: none;
+        }
+        .btn-submit {
+            background-color: #4a7227;
+            border: none;
+            border-bottom: 4px solid #2b4516;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.1s ease;
+        }
+        .btn-submit:hover { background-color: #55822e; }
+        .btn-submit:active { border-bottom-width: 1px; transform: translateY(3px); }
+        .error-msg {
+            color: #f87171;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <!-- Вкладки переключения режима -->
+        <div class="auth-tabs">
+            <div id="tab-login" class="auth-tab active-tab" onclick="setMode('login')">ВХОД</div>
+            <div id="tab-register" class="auth-tab" onclick="setMode('register')">РЕГИСТРАЦИЯ</div>
+        </div>
+
+        <h2 id="auth-title" style="color: #ffaa00; margin-bottom: 20px; font-size: 20px;">АВТОРИЗАЦИЯ ИГРОКА</h2>
+        
+        <div id="error-box" class="error-msg"></div>
+
+        <input type="text" id="username" placeholder="Имя игрока (Никнейм)">
+        <input type="password" id="password" placeholder="Пароль">
+        
+        <button class="btn-submit" id="action-btn" onclick="handleSubmit()">ВОЙТИ В ИГРУ</button>
+    </div>
+
+    <script>
+        let currentMode = 'login'; // Режим по умолчанию
+
+        function setMode(mode) {
+            currentMode = mode;
+            const errorBox = document.getElementById('error-box');
+            errorBox.style.display = 'none';
+
+            if (mode === 'login') {
+                document.getElementById('tab-login').classList.add('active-tab');
+                document.getElementById('tab-register').classList.remove('active-tab');
+                document.getElementById('auth-title').innerText = 'ВХОД В АККАУНТ';
+                document.getElementById('action-btn').innerText = 'ВОЙТИ В ИГРУ';
+            } else {
+                document.getElementById('tab-register').classList.add('active-tab');
+                document.getElementById('tab-login').classList.remove('active-tab');
+                document.getElementById('auth-title').innerText = 'СОЗДАТЬ АККАУНТ';
+                document.getElementById('action-btn').innerText = 'ЗАРЕГИСТРИРОВАТЬСЯ';
+            }
+        }
+
+        function handleSubmit() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorBox = document.getElementById('error-box');
+            
+            errorBox.style.display = 'none';
+
+            if (!user || !pass) {
+                errorBox.innerText = "❌ Заполните все поля формы!";
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            if (user.length < 3) {
+                errorBox.innerText = "❌ Никнейм должен быть не менее 3 символов!";
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+
+            if (currentMode === 'register') {
+                // Если регистрируем новый аккаунт
+                if (users[user]) {
+                    errorBox.innerText = "❌ Этот никнейм уже занят другим игроком!";
+                    errorBox.style.display = 'block';
+                    return;
+                }
+                
+                // Создаем аккаунт со стартовым балансом 0
+                users[user] = { password: pass, balance: 0, inventory: [] };
+                localStorage.setItem('mc_users', JSON.stringify(users));
+                
+                // АВТО-ВХОД: Сразу логиним игрока без лишних окон
+                localStorage.setItem('mc_current_user', user);
+                window.location.href = 'cases.html';
+            } else {
+                // Если просто входим
+                if (!users[user] || users[user].password !== pass) {
+                    errorBox.innerText = "❌ Неверный никнейм или пароль!";
+                    errorBox.style.display = 'block';
+                    return;
+                }
+                
+                localStorage.setItem('mc_current_user', user);
+                window.location.href = 'cases.html';
+            }
+        }
+
+        // Клик по Enter для отправки формы
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+    </script>
+</body>
+</html>

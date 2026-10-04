@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Вывод предметов</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">📦 MC-FOOD-CASES</div>
+        <div class="balance" id="balance-display">Баланс: -- 💰</div>
+    </header>
+
+    <nav>
+        <a href="cases.html"><button>КЕЙСЫ</button></a>
+        <a href="farm.html"><button>🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button>АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button class="active-nav">💸 ВЫВОД</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <div class="payout-container">
+        <!-- ЛЕВАЯ ЧАСТЬ: ИНВЕНТАРЬ ИГРОКА -->
+        <div class="inventory-section">
+            <h3>ВЫБЕРИТЕ ПРЕДМЕТ ИЗ ИНВЕНТАРЯ ДЛЯ ВЫВОДА:</h3>
+            <div class="payout-inventory-grid" id="payout-inventory">
+                <!-- Сюда скриптом выводятся предметы -->
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ: ОФОРМЛЕНИЕ И ИСТОРИЯ -->
+        <div class="right-section">
+            <div class="form-box">
+                <h2>ОФОРМИТЬ ВЫВОД</h2>
+                
+                <!-- Превью выбранного скина -->
+                <div class="selected-preview" id="preview-box">Предмет не выбран</div>
+                
+                <input type="text" id="target-username" placeholder="Ваш никнейм в Minecraft">
+                <button class="btn-payout" onclick="submitItemPayout()">ВЫВЕСТИ В ИГРУ</button>
+            </div>
+
+            <div class="history-box">
+                <h3>📜 ИСТОРИЯ ВЫВОДОВ</h3>
+                <div id="payout-history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FOOD_ITEMS = {
+            "1": { name: "Золотая морковь", price: 7, color: "#55ffff", url: "images1.jpg" },
+            "2": { name: "Стейк", price: 2, color: "#8b5a2b", url: "images2.jpg" },
+            "3": { name: "Золотое яблоко", price: 15, color: "#ffaa00", url: "images3.jpg" },
+            "4": { name: "Жареная курица", price: 4, color: "#cd853f", url: "images4.png" }
+        };
+
+        const currentUser = localStorage.getItem('mc_current_user');
+        if (!currentUser) window.location.href = 'index.html';
+
+        let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+        let userData = users[currentUser];
+
+        if (!userData.item_payouts) userData.item_payouts = [];
+
+        let selectedIndex = null; 
+
+        function saveLayout() {
+            users[currentUser] = userData;
+            localStorage.setItem('mc_users', JSON.stringify(users));
+        }
+
+        function logout() {
+            localStorage.removeItem('mc_current_user');
+            window.location.href = 'index.html';
+        }
+
+        function updateUI() {
+            let displayBalance = parseFloat(userData.balance).toFixed(1);
+            if (displayBalance === "-0.0" || displayBalance === "0.0") displayBalance = "0";
+            document.getElementById('balance-display').innerText = `Баланс: ${displayBalance} 💰`;
+
+            // Рендерим инвентарь для вывода предметов
+            const invGrid = document.getElementById('payout-inventory');
+            invGrid.innerHTML = '';
+
+            if (!userData.inventory || userData.inventory.length === 0) {
+                invGrid.innerHTML = '<p style="color: #64748b; font-size: 14px; width:100%; text-align:center; padding-top:40px;">Ваш инвентарь пуст. Выбейте что-нибудь из кейса!</p>';
+                document.getElementById('preview-box').innerText = "Предмет не выбран";
+                selectedIndex = null;
+            } else {
+                userData.inventory.forEach((itemKey, index) => {
+                    const item = FOOD_ITEMS[itemKey];
+                    if(!item) return;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    if (selectedIndex === index) card.className += ' selected-item';
+                    card.style.borderColor = item.color;
+                    card.innerHTML = `<img src="${item.url}"><b>${item.name}</b><span style="color:#64748b">${item.price} 💰</span>`;
+                    
+                    card.onclick = () => selectItemForPayout(index, itemKey);
+                    invGrid.appendChild(card);
+                });
+            }
+
+            // Рендерим историю выводов
+            const historyList = document.getElementById('payout-history-list');
+            historyList.innerHTML = '';
+
+            if (userData.item_payouts.length === 0) {
+                historyList.innerHTML = '<p style="color: #64748b; font-size: 13px; text-align: center;">История выводов пуста</p>';
+                return;
+            }
+
+            userData.item_payouts.forEach(payout => {
+                const item = document.createElement('div');
+                item.className = 'payout-item';
+                item.innerHTML = `
+                    <div>
+                        <b style="color:#ffaa00;">${payout.itemName}</b><br>
+                        <small style="color: #64748b;">Ник: ${payout.mcNick}</small>
+                    </div>
+                    <span class="status-processing">${payout.status}</span>
+                `;
+                historyList.appendChild(item);
+            });
+        }
+
+        function selectItemForPayout(index, itemKey) {
+            selectedIndex = index;
+            const item = FOOD_ITEMS[itemKey];
+            const preview = document.getElementById('preview-box');
+            
+            preview.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <img src="${item.url}" style="width:32px; height:32px; image-rendering:pixelated;">
+                    <span style="color:${item.color}">${item.name}</span>
+                </div>
+            `;
+            updateUI();
+        }
+
+        function submitItemPayout() {
+            const mcNick = document.getElementById('target-username').value.trim();
+            
+            if (selectedIndex === null) {
+                return alert("Сначала выберите предмет из инвентаря слева!");
+            }
+            if (!mcNick) {
+                return alert("Введите свой игровой никнейм в Minecraft!");
+            }
+
+            const itemKey = userData.inventory[selectedIndex];
+            const itemName = FOOD_ITEMS[itemKey].name;
+
+            // Удаляем вещь из инвентаря
+            userData.inventory.splice(selectedIndex, 1);
+
+            // Создаем заявку на вывод вещи
+            userData.item_payouts.unshift({
+                itemName: itemName,
+                mcNick: mcNick,
+                status: "В обработке"
+            });
+
+            selectedIndex = null;
+            document.getElementById('target-username').value = '';
+            document.getElementById('preview-box').innerText = "Предмет не выбран";
+
+            saveLayout();
+            updateUI();
+            alert(`Заявка на вывод предмета "${itemName}" успешно создана!`);
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

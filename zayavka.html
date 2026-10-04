@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Cases - Панель Администратора</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: #1c1f26;
+            border: 2px solid #2d323f;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .admin-container h2 { color: #ffaa00; margin-bottom: 20px; border-bottom: 1px solid #2d323f; padding-bottom: 10px; }
+        
+        .global-payout-item {
+            background: #0f1115;
+            border: 1px solid #2d323f;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .payout-info b { color: #ffaa00; }
+        .payout-info span { color: #94a3b8; font-size: 14px; }
+        
+        .btn-approve {
+            background-color: #4a7227;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-approve:hover { background-color: #5c8e32; }
+        
+        .status-done { color: #00ffaa; font-weight: bold; }
+        .status-wait { color: #ffcc00; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">📦 MC-FOOD-CASES — АДМИН ПАНЕЛЬ</div>
+        <div class="balance" id="balance-display">Баланс: -- 💰</div>
+    </header>
+
+    <nav id="main-nav">
+        <a href="cases.html"><button id="nav-cases">КЕЙСЫ</button></a>
+        <a href="farm.html"><button id="nav-farm">🥩 ФЕРМА</button></a>
+        <a href="upgrader.html"><button id="nav-upgrader">АПГРЕЙДЕР</button></a>
+        <a href="vivod.html"><button id="nav-vivod">💸 ВЫВОД</button></a>
+        <a href="zayavka.html"><button id="nav-admin" class="active-nav" style="background-color: #242b35; border-color: #ffaa00; color: #ffaa00;">⚙️ ЗАЯВКИ</button></a>
+        <button onclick="logout()" style="margin-left: auto; background-color: #451a1a; border-color: #2d1313; color: #f87171;">ВЫЙТИ</button>
+    </nav>
+
+    <div class="admin-container">
+        <h2>📥 ВСЕ ЗАЯВКИ НА ВЫВОД ПРЕДМЕТОВ</h2>
+        <div id="global-requests-list">
+            <!-- Сюда будут подгружаться все заявки -->
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('mc_current_user');
+        // Жесткая проверка: если зашел не imCOT51, выкидываем на главную
+        if (currentUser !== 'imCOT51') {
+            alert("Доступ запрещен! Вы не являетесь администратором.");
+            window.location.href = 'index.html';
+        }
+
+        let users = JSON.parse(localStorage.getItem('mc_users') || '{}');
+        let userData = users[currentUser];
+
+        function logout() {
+            localStorage.removeItem('mc_current_user');
+            window.location.href = 'index.html';
+        }
+
+        function updateUI() {
+            document.getElementById('balance-display').innerText = `Админ: ${currentUser}`;
+            const listContainer = document.getElementById('global-requests-list');
+            listContainer.innerHTML = '';
+
+            let hasRequests = false;
+
+            // Пробегаемся по всем зарегистрированным пользователям сайта
+            Object.keys(users).forEach(username => {
+                const userObj = users[username];
+                if (userObj.item_payouts && userObj.item_payouts.length > 0) {
+                    userObj.item_payouts.forEach((payout, index) => {
+                        hasRequests = true;
+                        
+                        const item = document.createElement('div');
+                        item.className = 'global-payout-item';
+                        
+                        let actionContent = '';
+                        if (payout.status === 'В обработке') {
+                            actionContent = `<button class="btn-approve" onclick="approvePayout('${username}', ${index})">ВЫДАТЬ В ИГРЕ</button>`;
+                        } else {
+                            actionContent = `<span class="status-done">✓ ВЫДАНО</span>`;
+                        }
+
+                        item.innerHTML = `
+                            <div class="payout-info">
+                                <span>Аккаунт на сайте: <b>${username}</b></span><br>
+                                <span>Ник в Minecraft: <b style="color:#fff;">${payout.mcNick}</b></span><br>
+                                <small style="color: #94a3b8; font-size:14px;">Предмет: <b style="color:#00ffaa;">${payout.itemName}</b></small>
+                            </div>
+                            <div>
+                                ${actionContent}
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                }
+            });
+
+            if (!hasRequests) {
+                listContainer.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">Активных заявок от игроков пока нет.</p>';
+            }
+        }
+
+        function approvePayout(playerUsername, payoutIndex) {
+            // Меняем статус заявки у конкретного игрока
+            if (users[playerUsername] && users[playerUsername].item_payouts[payoutIndex]) {
+                users[playerUsername].item_payouts[payoutIndex].status = "Выдано";
+                
+                // Сохраняем глобальную базу данных
+                localStorage.setItem('mc_users', JSON.stringify(users));
+                updateUI();
+                alert(`Предмет для игрока ${playerUsername} успешно помечен как выданный!`);
+            }
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
